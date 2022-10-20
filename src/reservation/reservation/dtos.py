@@ -22,7 +22,7 @@ class ReservationDTO(QRDTO):
     bookUid: str
     libraryUid: str
     status: str
-    startDate: str  # todo format
+    startDate: str
     tillDate: str
 
 

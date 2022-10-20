@@ -10,6 +10,12 @@ class ILibraryRepository:
     @abstractmethod
     def get_books(self, library_uid, available_only=False, limit=None, offset=None): pass
 
+    @abstractmethod
+    def get_book(self, book_uid): pass
+
+    @abstractmethod
+    def get_library(self, library_uid): pass
+
 
 class LibraryRepository(ILibraryRepository, rep.QRRepository):
     def __init__(self):
@@ -39,6 +45,20 @@ class LibraryRepository(ILibraryRepository, rep.QRRepository):
         request = self._add_paging(request, limit, offset)
         books = request.all()
         return books
+
+    def get_library(self, library_uid):
+        if self.db is None:
+            raise Exception('DBAdapter not connected to database')
+        t = self.db.library
+        library = self.db.select(t).where(library_uid=library_uid).one()
+        return library
+
+    def get_book(self, book_uid):
+        if self.db is None:
+            raise Exception('DBAdapter not connected to database')
+        t = self.db.books
+        book = self.db.select(t).where(book_uid=book_uid).one()
+        return book
 
     def _add_paging(self, request, limit=None, offset=None):
         if limit is not None:

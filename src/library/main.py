@@ -19,7 +19,7 @@ def list_libraries_in_city(ctx: QRContext):
     return MethodResult(PagingListLibraryDTO(page, size, len(libraries), libraries))
 
 
-def list_books_in_library(ctx: QRContext, library_uid: int):
+def list_books_in_library(ctx: QRContext, library_uid: str):
     show_all = ctx.params.get('showAll')
     page = int(ctx.params.get('page'))
     size = int(ctx.params.get('size'))
@@ -35,6 +35,20 @@ def list_books_in_library(ctx: QRContext, library_uid: int):
     if books is None:
         return MethodResult('books not found', 400)
     return MethodResult(PagingListBookDTO(page, size, len(books), books))
+
+
+def get_book(ctx: QRContext, book_uid: str):
+    book = ctx.repository.get_book(book_uid)
+    if book is None:
+        return MethodResult('book not found', 400)
+    return MethodResult(BookShortDTO(**book))
+
+
+def get_library(ctx: QRContext, library_uid: str):
+    library = ctx.repository.get_library(library_uid)
+    if library is None:
+        return MethodResult('library not found', 400)
+    return MethodResult(LibraryDTO(**library))
 
 
 class LibraryServer(FlaskServer, LibraryRepository):
@@ -58,4 +72,6 @@ if __name__ == "__main__":
 
     server.register_method('/api/v1/libraries', list_libraries_in_city, 'GET')
     server.register_method('/api/v1/libraries/<library_uid>/books', list_books_in_library, 'GET')
+    server.register_method('/api/v1/libraries/<library_uid>', get_library, 'GET')
+    server.register_method('/api/v1/books/<book_uid>', get_book, 'GET')
     server.run(host, port)

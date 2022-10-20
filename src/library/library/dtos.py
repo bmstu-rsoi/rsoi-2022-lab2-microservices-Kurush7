@@ -11,6 +11,10 @@ def library_parser(d: dict):
 def book_parser(d: dict):
     parse_dict(d, rename={'book_uid': 'bookUid', 'available_count': 'availableCount'}, remove=['id'])
 
+def short_book_parser(d: dict):
+    parse_dict(d, rename={'book_uid': 'bookUid', 'available_count': 'availableCount'},
+               remove=['id', 'condition'])
+
 
 @dto_kwargs_parser(library_parser)
 @dataclass
@@ -30,6 +34,15 @@ class BookDTO(QRDTO):
     genre: str
     condition: str
     availableCount: str
+
+
+@dto_kwargs_parser(short_book_parser)
+@dataclass
+class BookShortDTO(QRDTO):
+    bookUid: str
+    name: str
+    author: str
+    genre: str
 
 
 @dataclass
