@@ -1,3 +1,7 @@
+import time
+
+from flask import request, jsonify, Response
+
 from qr_server.Server import MethodResult, QRContext
 from qr_server.Config import QRYamlConfig
 from qr_server.FlaskServer import FlaskServer
@@ -5,6 +9,19 @@ from qr_server.request_sending import *
 
 from gateway.dtos import *
 from gateway.utils import *
+
+
+def _expand_reservation(res, library_address):
+    book_uid = res['bookUid']
+    library_uid = res['libraryUid']
+
+    book = get_book(library_address, book_uid)
+    library = get_library(library_address, library_uid)
+
+    res['book'] = book
+    res['library'] = library
+    res.pop('libraryUid')
+    res.pop('bookUid')
 
 
 def list_libraries_in_city(ctx: QRContext):
@@ -65,9 +82,101 @@ def get_user_reservations(ctx: QRContext):
     return MethodResult(ListReservationFullDTO(data))
 
 
+def rent_book(ctx: QRContext):
+    username = ctx.params.get('X-User-Name')
+    data = ctx.json_data
+    book_uid, library_uid, till_date = [data.get(x) for x in ['bookUid', 'libraryUid', 'tillDate']]
+
+    if username is None:
+        return MethodResult(RentBookError('username not found', []), 400)
+    if None in [book_uid, library_uid, till_date]:
+        return MethodResult(RentBookError('empty fields found', []), 400)
+
+    reservation_address = ctx.meta['services']['reservation']
+    library_address = ctx.meta['services']['library']
+    rating_address = ctx.meta['services']['rating']
+
+    # get reservations
+    resp = send_request(reservation_address, f'api/v1/reservations',
+                        request=QRRequest(params=ctx.params, json_data=ctx.json_data, headers=ctx.headers))
+    if resp.status_code != 200:
+        return MethodResult(RentBookError('reservations not found', []), 400)
+    reservations = resp.get_json()
+
+    # get user rating
+    resp = send_request(rating_address, f'api/v1/rating', request=QRRequest(params=ctx.params, json_data=ctx.json_data, headers=ctx.headers))
+    if resp.status_code != 200:
+        return MethodResult('user not found', 400)
+    rating = resp.get_json()
+
+    if len(reservations) >= rating['stars']:
+        return MethodResult(RentBookError('reservations limit reached', []), 400)
+
+    # decrease library
+    resp = send_request(library_address, f'api/v1/libraries/{library_uid}/books/{book_uid}/rent', method='POST',
+                        request=QRRequest())
+    if resp.status_code != 200:
+        return MethodResult('can\'t rent book from library', 400)
+
+    # create reservation
+    resp = send_request(reservation_address, f'api/v1/reservations', method='POST',
+                        request=QRRequest(json_data={'username': username, 'library_uid': library_uid,
+                                                     'book_uid': book_uid, 'till_date': till_date}))
+    if resp.status_code != 200:
+        return MethodResult('can\'t create reservation', 400)
+        # todo release book?
+    reservation = resp.get_json()
+    _expand_reservation(reservation, library_address)
+
+    # update rating
+    # todo
+
+    reservation['rating'] = rating
+    return MethodResult(CreateReservationDTO(**reservation))
+
+
+def return_book(ctx: QRContext, reservation_uid: str):
+    username = ctx.params.get('X-User-Name')
+    data = ctx.json_data
+    condition, date = [data.get(x) for x in ['condition', 'date']]
+
+    if username is None:
+        return MethodResult(ReturnBookError('username not found'), 400)
+    if None in [condition, date]:
+        return MethodResult(ReturnBookError('empty fields found'), 400)
+
+
+
 class GatewayServer(FlaskServer):
     def __init__(self):
         super().__init__(400)
+
+    def __method(self, f, *args, **kwargs):  # note: valuable changes; add to original FlaskServer
+        ctx = super().create_context(request, self, meta=self.meta)
+        ctx.set_managers(self.managers)
+        in_msg = '[' + request.method + '] ' + request.url + '/' + request.query_string.decode()
+        try:
+            start = time.time()
+            result = f(ctx, *args, **kwargs)
+            end = time.time()
+            msecs = int((end - start) * 1000)
+            super().info('[' + str(msecs) + ' msecs]' + in_msg)
+            if result.raw_data:
+                return result.result
+            if result.status_code == 200:
+                return jsonify(result.result)
+
+            resp = Response(result.result, result.status_code)
+
+            if result.headers is not None:
+                for header, value in result.headers.items():
+                    resp.headers[header] = value
+            return resp
+
+        except Exception as e:
+            super().info(in_msg)
+            super().exception(e)
+            return self.default_err_msg, self.default_err_code
 
 
 if __name__ == "__main__":
@@ -97,4 +206,6 @@ if __name__ == "__main__":
     server.register_method('/api/v1/libraries/<library_uid>/books', list_books_in_library, 'GET')
     server.register_method('/api/v1/rating', get_user_rating, 'GET')
     server.register_method('/api/v1/reservations', get_user_reservations, 'GET')
+    server.register_method('/api/v1/reservations', rent_book, 'POST')
+    server.register_method('/api/v1/reservations/<reservation_uid>/return', return_book, 'POST')
     server.run(host, port)

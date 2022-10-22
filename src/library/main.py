@@ -51,6 +51,13 @@ def get_library(ctx: QRContext, library_uid: str):
     return MethodResult(LibraryDTO(**library))
 
 
+def rent_book(ctx: QRContext, library_uid: str, book_uid: str):
+    ok = ctx.repository.rent_book(library_uid, book_uid)
+    if not ok:
+        return MethodResult('error', 400)
+    return MethodResult('ok')
+
+
 class LibraryServer(FlaskServer, LibraryRepository):
     def __init__(self):
         super().__init__(400)
@@ -74,4 +81,5 @@ if __name__ == "__main__":
     server.register_method('/api/v1/libraries/<library_uid>/books', list_books_in_library, 'GET')
     server.register_method('/api/v1/libraries/<library_uid>', get_library, 'GET')
     server.register_method('/api/v1/books/<book_uid>', get_book, 'GET')
+    server.register_method('/api/v1/libraries/<library_uid>/books/<book_uid>/rent', rent_book, 'POST')
     server.run(host, port)

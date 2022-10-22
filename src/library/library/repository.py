@@ -16,6 +16,9 @@ class ILibraryRepository:
     @abstractmethod
     def get_library(self, library_uid): pass
 
+    @abstractmethod
+    def rent_book(self, library_uid, book_uid): pass
+
 
 class LibraryRepository(ILibraryRepository, rep.QRRepository):
     def __init__(self):
@@ -59,6 +62,23 @@ class LibraryRepository(ILibraryRepository, rep.QRRepository):
         t = self.db.books
         book = self.db.select(t).where(book_uid=book_uid).one()
         return book
+
+    def rent_book(self, library_uid, book_uid):
+        if self.db is None:
+            raise Exception('DBAdapter not connected to database')
+
+        t = self.db.library_books
+        db, op = self.db, self.db.operators
+        b = db.books
+        cnt = db.select(b, db.library_books.available_count, db.library.id, db.books.id)\
+            .join(db.library_books, op.Eq(db.library_books.book_id, db.books.id))\
+            .join(db.library, op.Eq(db.library_books.library_id, db.library.id)).\
+            where(op.Eq(db.library.library_uid, library_uid), op.Eq(db.books.book_uid, book_uid)).one()
+        if cnt is None or cnt['available_count'] == 0:
+            return False
+        ok = self.db.update(t, auto_commit=True).set(available_count=cnt['available_count']-1)\
+            .where(library_id=cnt['library_id'], book_id=cnt['books_id']).exec()
+        return ok
 
     def _add_paging(self, request, limit=None, offset=None):
         if limit is not None:

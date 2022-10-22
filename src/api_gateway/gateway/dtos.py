@@ -13,5 +13,28 @@ class ReservationFullDTO(QRDTO):
     tillDate: str
 
 
+@dataclass
+class RequestError(QRDTO):
+    field: str
+    error: str
+
+
+@convert_fields({'[]errors': RequestError})
+@dataclass
+class RentBookError(QRDTO):
+    message: str
+    errors: List[Dict]
+
+
+@dataclass
+class ReturnBookError(QRDTO):
+    message: str
+
+
+@dataclass
+class CreateReservationDTO(ReservationFullDTO):
+    rating: RatingDTO
+
+
 class ListReservationFullDTO(ArrayQRDTO(ReservationFullDTO)):
     pass
