@@ -9,6 +9,12 @@ class IReservationRepository:
     def get_reservations(self, username): pass
 
     @abstractmethod
+    def get_reservation(self, uid): pass
+
+    @abstractmethod
+    def set_reservation_status(self, uid, status): pass
+
+    @abstractmethod
     def create_reservation(self, res_uid, username, book_uid, library_uid,
                            status, start_date, till_date): pass
 
@@ -20,8 +26,22 @@ class ReservationRepository(IReservationRepository, rep.QRRepository):
     def get_reservations(self, username):
         if self.db is None:
             raise Exception('DBAdapter not connected to database')
-        rating = self.db.select(self.db.reservation).where(username=username).all()
-        return rating
+        reservations = self.db.select(self.db.reservation).where(username=username).all()
+        return reservations
+
+    def get_reservation(self, uid):
+        if self.db is None:
+            raise Exception('DBAdapter not connected to database')
+        reservation = self.db.select(self.db.reservation).where(reservation_uid=uid).one()
+        return reservation
+
+    def set_reservation_status(self, uid, status):
+        if self.db is None:
+            raise Exception('DBAdapter not connected to database')
+        t = self.db.reservation
+        ok = self.db.update(t, auto_commit=True).set(status=status)\
+            .where(reservation_uid=uid).exec()
+        return ok
 
     def create_reservation(self, res_uid, username, book_uid, library_uid,
                            status, start_date, till_date):

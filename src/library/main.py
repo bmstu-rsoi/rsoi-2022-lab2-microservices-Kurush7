@@ -41,7 +41,7 @@ def get_book(ctx: QRContext, book_uid: str):
     book = ctx.repository.get_book(book_uid)
     if book is None:
         return MethodResult('book not found', 400)
-    return MethodResult(BookShortDTO(**book))
+    return MethodResult(UncountedBookDTO(**book))
 
 
 def get_library(ctx: QRContext, library_uid: str):
@@ -53,6 +53,13 @@ def get_library(ctx: QRContext, library_uid: str):
 
 def rent_book(ctx: QRContext, library_uid: str, book_uid: str):
     ok = ctx.repository.rent_book(library_uid, book_uid)
+    if not ok:
+        return MethodResult('error', 400)
+    return MethodResult('ok')
+
+
+def return_book(ctx: QRContext, library_uid: str, book_uid: str):
+    ok = ctx.repository.return_book(library_uid, book_uid)
     if not ok:
         return MethodResult('error', 400)
     return MethodResult('ok')
@@ -82,4 +89,5 @@ if __name__ == "__main__":
     server.register_method('/api/v1/libraries/<library_uid>', get_library, 'GET')
     server.register_method('/api/v1/books/<book_uid>', get_book, 'GET')
     server.register_method('/api/v1/libraries/<library_uid>/books/<book_uid>/rent', rent_book, 'POST')
+    server.register_method('/api/v1/libraries/<library_uid>/books/<book_uid>/return', return_book, 'POST')
     server.run(host, port)

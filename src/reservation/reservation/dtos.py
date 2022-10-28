@@ -26,5 +26,7 @@ class ReservationDTO(QRDTO):
     tillDate: str
 
 
+
+
 class ListReservationDTO(ArrayQRDTO(ReservationDTO)):
     pass

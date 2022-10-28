@@ -35,6 +35,20 @@ def create_reservation(ctx: QRContext):
     return MethodResult(ReservationDTO(**reservation))
 
 
+def get_reservation(ctx: QRContext, reservation_uid):
+    reservation = ctx.repository.get_reservation(reservation_uid)
+    if reservation is None:
+        return MethodResult('reservation not found', 400)
+    return MethodResult(ReservationDTO(**reservation))
+
+def set_reservation_status(ctx: QRContext, reservation_uid):
+    status = ctx.params.get('status')
+    ok = ctx.repository.set_reservation_status(reservation_uid, status)
+    if not ok:
+        return MethodResult('can\'t update reservation status', 400)
+    return MethodResult()
+
+
 class ReservationServer(FlaskServer, ReservationRepository):
     def __init__(self):
         super().__init__(400)
@@ -55,5 +69,7 @@ if __name__ == "__main__":
         server.configure_logger(config['app']['logging'])
 
     server.register_method('/api/v1/reservations', get_user_reservations, 'GET')
+    server.register_method('/api/v1/reservations/<reservation_uid>', get_reservation, 'GET')
     server.register_method('/api/v1/reservations', create_reservation, 'POST')
+    server.register_method('/api/v1/reservations/<reservation_uid>', set_reservation_status, 'POST')
     server.run(host, port)

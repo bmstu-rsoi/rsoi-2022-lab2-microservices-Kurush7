@@ -15,6 +15,19 @@ def get_user_rating(ctx: QRContext):
     return MethodResult(RatingDTO(**rating))
 
 
+def set_user_rating(ctx: QRContext):
+    username = ctx.params.get('X-User-Name')
+    stars = ctx.params.get('stars')
+
+    if None in [stars, username]:
+        raise Exception('username or stars fields are missing')
+
+    ok = ctx.repository.set_rating(username, stars)
+    if not ok:
+        return MethodResult('can\'t update rating', 400)
+    return MethodResult('ok')
+
+
 class RatingServer(FlaskServer, RatingRepository):
     def __init__(self):
         super().__init__(400)
@@ -35,4 +48,5 @@ if __name__ == "__main__":
         server.configure_logger(config['app']['logging'])
 
     server.register_method('/api/v1/rating', get_user_rating, 'GET')
+    server.register_method('/api/v1/rating', set_user_rating, 'PUT')
     server.run(host, port)
