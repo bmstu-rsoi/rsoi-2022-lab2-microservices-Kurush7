@@ -15,7 +15,7 @@ database:
   dbname: libraries
   username: program
   password: test
-  host: localhost
+  host: postgres
   port: 5432
   logging:
     logger_name: LibraryDatabaseLogger

@@ -9,3 +9,15 @@ app:
     level: info
     file: gateway_service.log
     file_level: info
+
+rating_service:
+  host: rating
+  port: 8050
+
+library_service:
+  host: library
+  port: 8060
+
+reservation_service:
+  host: reservation
+  port: 8070

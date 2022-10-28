@@ -15,7 +15,7 @@ database:
   dbname: ratings
   username: program
   password: test
-  host: 0.0.0.0
+  host: postgres
   port: 5432
   logging:
     logger_name: DatabaseLogger

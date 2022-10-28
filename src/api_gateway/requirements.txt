@@ -1,1 +1,1 @@
-qr-server==1.1.6
+qr-server==1.1.10

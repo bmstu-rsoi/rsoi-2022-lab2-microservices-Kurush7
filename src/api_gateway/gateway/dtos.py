@@ -1,6 +1,9 @@
-from src.rating.rating.dtos import *
-from src.library.library.dtos import *
-from src.reservation.reservation.dtos import *
+import sys
+sys.path.append('..')
+
+from rating.rating.dtos import *
+from library.library.dtos import *
+from reservation.reservation.dtos import *
 
 
 @dataclass
