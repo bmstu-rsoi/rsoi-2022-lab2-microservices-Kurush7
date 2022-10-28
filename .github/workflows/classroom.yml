@@ -20,6 +20,7 @@ jobs:
       - name: Build docker containers
         run: |
           cd src
+          chmod +x build_docker.sh
           ./build_docker.sh
 
       - name: Build images
