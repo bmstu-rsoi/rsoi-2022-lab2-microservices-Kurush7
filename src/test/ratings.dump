@@ -68,8 +68,8 @@ ALTER TABLE ONLY public.rating ALTER COLUMN id SET DEFAULT nextval('public.ratin
 --
 
 COPY public.rating (id, username, stars) FROM stdin;
-2	max	50
 1	kurush	70
+2	Test Max	52
 \.
 
 

@@ -51,7 +51,9 @@ def list_books_in_library(ctx: QRContext, library_uid: int):
 def get_user_rating(ctx: QRContext):
     # full redirect
     address = ctx.meta['services']['rating']
-    resp = send_request(address, f'api/v1/rating', request=QRRequest(params=ctx.params, json_data=ctx.json_data, headers=ctx.headers))
+    username = ctx.headers.environ['HTTP_X_USER_NAME']
+    params = {'X-User-Name': username}
+    resp = send_request(address, f'api/v1/rating', request=QRRequest(params=params, json_data=ctx.json_data, headers=ctx.headers))
     if resp.status_code != 200:
         return MethodResult('user not found', 400)
 
@@ -62,8 +64,11 @@ def get_user_rating(ctx: QRContext):
 def get_user_reservations(ctx: QRContext):
     # full redirect
     reservation_address = ctx.meta['services']['reservation']
+    username = ctx.headers.environ['HTTP_X_USER_NAME']
+    params = {'X-User-Name': username}
+
     resp = send_request(reservation_address, f'api/v1/reservations',
-                        request=QRRequest(params=ctx.params, json_data=ctx.json_data, headers=ctx.headers))
+                        request=QRRequest(params=params, json_data=ctx.json_data, headers=ctx.headers))
     if resp.status_code != 200:
         return MethodResult('reservations not found', 400)
 
@@ -85,7 +90,9 @@ def get_user_reservations(ctx: QRContext):
 
 
 def rent_book(ctx: QRContext):
-    username = ctx.params.get('X-User-Name')
+    username = ctx.headers.environ['HTTP_X_USER_NAME']
+    params = {'X-User-Name': username}
+
     data = ctx.json_data
     book_uid, library_uid, till_date = [data.get(x) for x in ['bookUid', 'libraryUid', 'tillDate']]
 
@@ -100,13 +107,13 @@ def rent_book(ctx: QRContext):
 
     # get reservations
     resp = send_request(reservation_address, f'api/v1/reservations',
-                        request=QRRequest(params=ctx.params, json_data=ctx.json_data, headers=ctx.headers))
+                        request=QRRequest(params=params, json_data=ctx.json_data, headers=ctx.headers))
     if resp.status_code != 200:
         return MethodResult(RentBookError('reservations not found', []), 400)
     reservations = resp.get_json()
 
     # get user rating
-    resp = send_request(rating_address, f'api/v1/rating', request=QRRequest(params=ctx.params, json_data=ctx.json_data, headers=ctx.headers))
+    resp = send_request(rating_address, f'api/v1/rating', request=QRRequest(params=params, json_data=ctx.json_data, headers=ctx.headers))
     if resp.status_code != 200:
         return MethodResult('user not found', 400)
     rating = resp.get_json()
@@ -135,7 +142,9 @@ def rent_book(ctx: QRContext):
 
 
 def return_book(ctx: QRContext, reservation_uid: str):
-    username = ctx.params.get('X-User-Name')
+    username = ctx.headers.environ['HTTP_X_USER_NAME']
+    params = {'X-User-Name': username}
+
     data = ctx.json_data
     condition, date = [data.get(x) for x in ['condition', 'date']]
 
@@ -161,7 +170,7 @@ def return_book(ctx: QRContext, reservation_uid: str):
 
 
     # get user rating
-    resp = send_request(rating_address, f'api/v1/rating', request=QRRequest(params=ctx.params, json_data=ctx.json_data, headers=ctx.headers))
+    resp = send_request(rating_address, f'api/v1/rating', request=QRRequest(params=params, json_data=ctx.json_data, headers=ctx.headers))
     if resp.status_code != 200:
         return MethodResult('user not found', 400)
     rating = resp.get_json()
@@ -194,7 +203,6 @@ def return_book(ctx: QRContext, reservation_uid: str):
     if ok:
         new_stars += 1
 
-    params = dict(ctx.params)
     params['stars'] = new_stars
     resp = send_request(rating_address, f'api/v1/rating',
                         request=QRRequest(params=params), method='PUT')

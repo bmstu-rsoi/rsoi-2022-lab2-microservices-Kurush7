@@ -75,6 +75,8 @@ ALTER TABLE ONLY public.reservation ALTER COLUMN id SET DEFAULT nextval('public.
 COPY public.reservation (id, reservation_uid, username, book_uid, library_uid, status, start_date, till_date) FROM stdin;
 1	83575e12-7ce0-48ee-1111-51919ff3c9ee	kurush	f7cdc58f-2caf-4b15-9727-f89dcc629b27	83575e12-7ce0-48ee-9931-51919ff3c9ee	RENTED	2022-10-10 22:10:36	2022-10-20 22:10:43
 12	47e42b4d-3bcb-4644-ac53-f4806f75ac86	kurush	f7cdc58f-2caf-4b15-9888-f89dcc629b27	83575e12-7ce0-48ee-9931-51919ff3c9ee	EXPIRED	2022-10-22 22:14:08.054341	2021-12-11 00:00:00
+13	dd076280-0aab-4548-9f89-e3ad867db75f	Test Max	f7cdc58f-2caf-4b15-9727-f89dcc629b27	83575e12-7ce0-48ee-9931-51919ff3c9ee	RETURNED	2022-10-28 19:33:59.347646	2021-10-11 00:00:00
+14	20993e24-e1ec-4433-bd51-8e5f2f2ad987	Test Max	f7cdc58f-2caf-4b15-9727-f89dcc629b27	83575e12-7ce0-48ee-9931-51919ff3c9ee	RETURNED	2022-10-28 19:37:31.973466	2021-10-11 00:00:00
 \.
 
 
@@ -82,7 +84,7 @@ COPY public.reservation (id, reservation_uid, username, book_uid, library_uid, s
 -- Name: reservation_id_seq; Type: SEQUENCE SET; Schema: public; Owner: program
 --
 
-SELECT pg_catalog.setval('public.reservation_id_seq', 12, true);
+SELECT pg_catalog.setval('public.reservation_id_seq', 14, true);
 
 
 --
